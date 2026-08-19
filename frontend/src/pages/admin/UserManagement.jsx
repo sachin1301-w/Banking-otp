@@ -1,0 +1,14 @@
+import { useEffect, useMemo, useState } from "react";
+import { usersApi } from "../../api/services";
+import { LedgerTable, StatusPill } from "../../components/Ledger";
+import { shortDate } from "../../utils/format";
+
+export default function UserManagement(){
+ const [users,setUsers]=useState([]);const[loading,setLoading]=useState(true);const[error,setError]=useState("");const[busyId,setBusyId]=useState(null);const[search,setSearch]=useState("");
+ const load=async()=>{setLoading(true);try{setUsers(await usersApi.listAll());setError("");}catch(e){setError(e.response?.data?.message||"Could not load customers.");}finally{setLoading(false);}};
+ useEffect(()=>{load();},[]);
+ const rows=useMemo(()=>users.filter(u=>!search.trim()||[u.fullName,u.email,u.phoneNumber,u.role].some(v=>v?.toLowerCase().includes(search.toLowerCase()))),[users,search]);
+ const act=async(id,fn)=>{setBusyId(id);try{await fn(id);await load();}catch(e){setError(e.response?.data?.message||"Action failed.");}finally{setBusyId(null);}};
+ const columns=[{key:"fullName",label:"Customer",render:r=><div><p className="font-bold text-slate-800">{r.fullName}</p><p className="text-xs text-slate-400 mt-1">#{r.id} · Joined {shortDate(r.createdAt)}</p></div>},{key:"email",label:"Contact",render:r=><div><p>{r.email}</p><p className="text-xs text-slate-400 mt-1">{r.phoneNumber}</p></div>},{key:"role",label:"Role",render:r=><span className={`text-xs font-bold px-2.5 py-1 rounded-full ${r.role==="ADMIN"?"bg-violet-50 text-violet-700":"bg-blue-50 text-blue-700"}`}>{r.role}</span>},{key:"active",label:"Status",render:r=><StatusPill status={r.active?"ACTIVE":"INACTIVE"}/>},{key:"actions",label:"Actions",render:r=><div className="flex gap-3">{r.role!=="ADMIN"&&<button disabled={busyId===r.id} onClick={()=>act(r.id,usersApi.promote)} className="text-xs font-bold text-blue-600 hover:underline disabled:opacity-50">Promote</button>}{r.active?<button disabled={busyId===r.id} onClick={()=>act(r.id,usersApi.deactivate)} className="text-xs font-bold text-red-600 hover:underline disabled:opacity-50">Deactivate</button>:<button disabled={busyId===r.id} onClick={()=>act(r.id,usersApi.activate)} className="text-xs font-bold text-emerald-600 hover:underline disabled:opacity-50">Activate</button>}</div>}];
+ return <div className="space-y-5">{error&&<div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 text-sm font-semibold">{error}</div>}<div className="bank-surface p-4 flex flex-wrap items-center justify-between gap-3"><div><p className="font-extrabold">Customer directory</p><p className="text-xs text-slate-500 mt-1">{users.length} registered profiles</p></div><input className="form-input !w-auto min-w-72" placeholder="Search customer, email or phone…" value={search} onChange={e=>setSearch(e.target.value)}/></div>{loading?<div className="bank-surface p-8 text-slate-500">Loading customers…</div>:<LedgerTable columns={columns} rows={rows} keyField="id"/>}</div>;
+}
