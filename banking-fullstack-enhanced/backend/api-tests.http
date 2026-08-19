@@ -1,0 +1,125 @@
+### Banking System API smoke tests
+### Run the backend first on http://localhost:8080.
+### Paste a JWT from the login response into @token.
+
+@base = http://localhost:8080
+@token = PASTE_JWT_HERE
+
+### 1) Login (same endpoint for customer and admin)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "sk.39648215@gmail.com",
+  "password": "Sachin1301#"
+}
+
+### 2) Register a customer (automatically creates SAVINGS account)
+POST {{base}}/users
+Content-Type: application/json
+
+{
+  "fullName": "Demo Customer",
+  "email": "demo.customer@example.com",
+  "phoneNumber": "9999999999",
+  "password": "Demo@1234"
+}
+
+### 3) Current profile
+GET {{base}}/users/me
+Authorization: Bearer {{token}}
+
+### 4) Current user's accounts
+GET {{base}}/accounts/me
+Authorization: Bearer {{token}}
+
+### 5) Deposit — replace account number
+POST {{base}}/transactions/deposit
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "accountNumber": "ACC_REPLACE_ME",
+  "amount": 5000
+}
+
+### 6) Withdraw
+POST {{base}}/transactions/withdraw
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "accountNumber": "ACC_REPLACE_ME",
+  "amount": 500
+}
+
+### 7) Transfer — login as sender and replace both account numbers
+POST {{base}}/transactions/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fromAccountNumber": "ACC_SENDER",
+  "toAccountNumber": "ACC_RECEIVER",
+  "amount": 250
+}
+
+### 8) Sender/receiver account history
+GET {{base}}/transactions/account/ACC_REPLACE_ME
+Authorization: Bearer {{token}}
+
+### 9) Admin: all transactions
+GET {{base}}/transactions
+Authorization: Bearer {{token}}
+
+### =========================
+### EMAIL OTP TRANSACTIONS
+### =========================
+### 1) Log in as a USER and copy the JWT token into @userToken.
+### 2) Configure MAIL_USERNAME and MAIL_APP_PASSWORD before testing.
+
+@userToken = replace-with-user-jwt
+@myAccount = ACC_REPLACE_ME
+@recipientAccount = ACC_REPLACE_ME
+@challengeId = replace-after-request
+
+### Request deposit OTP (NO balance change yet)
+POST http://localhost:8080/transactions/deposit
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "accountNumber": "{{myAccount}}",
+  "amount": 500
+}
+
+### Request withdrawal OTP (NO balance change yet)
+POST http://localhost:8080/transactions/withdraw
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "accountNumber": "{{myAccount}}",
+  "amount": 100
+}
+
+### Request transfer OTP (NO balance change yet)
+POST http://localhost:8080/transactions/transfer
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "fromAccountNumber": "{{myAccount}}",
+  "toAccountNumber": "{{recipientAccount}}",
+  "amount": 50
+}
+
+### Verify OTP and execute the exact pending transaction
+POST http://localhost:8080/transactions/otp/verify
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "challengeId": "{{challengeId}}",
+  "otp": "123456"
+}
