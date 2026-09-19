@@ -148,4 +148,4 @@ The credentials in this project are development defaults. Change PostgreSQL, adm
 
 ## Email OTP for money movement
 
-Deposit, withdrawal and transfer are protected with a 6-digit email OTP. No balance is changed until the customer verifies the OTP. See `OTP_EMAIL_SETUP.md` for Gmail App Password and IntelliJ configuration.
+Deposit, withdrawal and transfer are protected with a 6-digit email OTP. No balance is changed until the customer verifies the OTP. See `OTP_EMAIL_SETUP.md` for Gmail App Password and IntelliJ configuration
